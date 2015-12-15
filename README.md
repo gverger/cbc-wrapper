@@ -1,15 +1,14 @@
-# Ruby-Cbc
+# Cbc-Wrapper
 
 This gem wraps the Coin-Or Cbc Mixed Integer Linear Programming Library.
 It uses the version 2.9.7 of Cbc.
-
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'cbc'
+gem 'cbc-wrapper'
 ```
 
 And then execute:
@@ -18,200 +17,381 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install cbc
+    $ gem install cbc-wrapper
 
-The gem includes a version of the Coin-Or Cbc library. If the system on which
-it is installed is not Linux 64bits, it downloads the library sources and
-recompiles them at installation.
+The gem includes a version of the Coin-Or Cbc library. It downloads the library sources and
+recompiles them at installation. (curl, make and some gcc tools are needed)
 
 It also works on Heroku.
 
-### Installing on a mac
-
-When installing on a mac it's easier to install the Coin-Or Cbc library
-separately, as it wont have to recompile the library if you update the gem.
-You shoud take care of using the same cbc version though (2.9.7)
-
-If you are using Homebrew, there is a [set of formulae](https://github.com/coin-or-tools/homebrew-coinor) that help with the installation. To install via homebrew:
-
-    $ brew tap coin-or-tools/coinor
-    $ brew install cbc
-
-If not you can download the appropriate binary from the [Coin-Or
-webpage](http://www.coin-or.org/download.html).
-
 ## Usage
 
+All functions defined in Cbc_C_interface.h are wrapped. You can use any function named
+`func_name` with 
 ```ruby
-# The same Brief Example as found in section 1.3 of 
-# glpk-4.44/doc/glpk.pdf.
-#
-# maximize
-#   z = 10 * x1 + 6 * x2 + 4 * x3
-#
-# subject to
-#   p:      x1 +     x2 +     x3 <= 100
-#   q: 10 * x1 + 4 * x2 + 5 * x3 <= 600
-#   r:  2 * x1 + 2 * x2 + 6 * x3 <= 300
-#
-# where all variables are non-negative
-#   x1 >= 0, x2 >= 0, x3 >= 0
-#
-m = Cbc::Model.new
-x1, x2, x3 = m.int_var_array(3, 0..Cbc::INF)
-
-m.maximize(10 * x1 + 6 * x2 + 4 * x3)
-
-m.enforce(x1 + x2 + x3 <= 100)
-m.enforce(10 * x1 + 4 * x2 + 5 * x3 <= 600)
-m.enforce(2 * x1 + 2 * x2 + 6* x3 <= 300)
-
-p = m.to_problem
-
-p.solve
-
-if ! p.proven_infeasible?
-  puts "x1 = #{p.value_of(x1)}"
-  puts "x2 = #{p.value_of(x2)}"
-  puts "x3 = #{p.value_of(x3)}"
-end
-```
-### Modelling
-
-Let's have a model :
-```ruby
-model = Cbc::Model.new
-```
-#### The variables
-
-3 variable kinds are available:
-```ruby
-x = model.bin_var(name: "x")        # a binary variable (i.e. can take values 0 and 1)
-y = model.int_var(L..U, name: "y")  # a integer variable, L <= y <= U
-z = model.cont_var(L..U, name: "z") # a continuous variable, L <= z <= U
-```
-Name is optional and used only when displaying the model.
-
-If you don't specify the range, the variables are free.
-You can also use ```Cbc::INF``` as the infinity bound.
-
-Each one of these 3 kinds have also an array method that generate several variables.
-For instance to generate 3 positive integer variables named x, y and z :
-```ruby
-x, y, z = model.int_var_array(3, 0..Cbc::INF, names: ["x", "y", "z"])
+Cbc_wrapper.func_name
 ```
 
-#### The constraints
+You can find an example on how to use it at https://github.com/gverger/ruby-cbc.
 
-You can enforce constraints:
-```ruby
-model.enforce(x + y - z <= 10)
-```
-You are not restricted to usual linear programming rules when writing a constraint.
-Usually you would have to write ```x - y = 0``` to express ```x = y```. Ruby-Cbc allows you to put variables and constants on both sides of the comparison operator. You can write
-```ruby
-model.enforce(x - y == 0)
-model.enforce(x == y)
-model.enforce(x + 2 == y + 2)
-model.enforce(0 == x - y)
-```
+Below is the Cbc_C_interface.h file:
 
-Linear constraints are usually of the form
-```ruby
-a1 * x1 + a2 * x2 + ... + an * xn <= C
-a1 * x1 + a2 * x2 + ... + an * xn >= C
-a1 * x1 + a2 * x2 + ... + an * xn == C
-```
+```c
+    /**@name Constructors and destructor
+      This is a "C" interface to Cbc.
+      The user does not need to know structure of Cbc_Model.
+    */
+    /*@{*/
 
-With Ruby-Cbc you can write
-```ruby
-2 * (2 + 5 * x) + 4 * 5 + 1 == 1 + 4 * 5
-```
-The (in)equation must still be a **linear** (in)equation, you cannot multiply two variables !
+    /** Default Cbc_Model constructor */
+    COINLIBAPI Cbc_Model * COINLINKAGE
+    Cbc_newModel(void)
+    ;
+    /** Cbc_Model Destructor */
+    COINLIBAPI void COINLINKAGE
+    Cbc_deleteModel(Cbc_Model * model)
+    ;
+    /** Current version of Cbc */
+    COINLIBAPI const char* COINLINKAGE Cbc_getVersion(void)
+    ;
+    /*@}*/
 
-#### Objective
+    /**@name Getting and setting model data
+     Note that problem access and modification methods,
+       such as getColLower and setColLower,
+       are *not valid* after calling Cbc_solve().
+       Therefore it is not recommended to reuse a Cbc_Model
+       object for multiple solves. A workaround is to call Cbc_clone()
+       before solving.
+     * */
+    /*@{*/
+    /** Loads a problem (the constraints on the
+        rows are given by lower and upper bounds). If a pointer is NULL then the
+        following values are the default:
+        <ul>
+        <li> <code>colub</code>: all columns have upper bound infinity
+        <li> <code>collb</code>: all columns have lower bound 0
+        <li> <code>rowub</code>: all rows have upper bound infinity
+        <li> <code>rowlb</code>: all rows have lower bound -infinity
+        <li> <code>obj</code>: all variables have 0 objective coefficient
+        </ul>
 
-You can set the objective:
-```ruby
-model.maximize(3 * x + 2 * y)
-model.minimize(3 * x + 2 * y)
-```
+     The constraint matrix is
+     given in standard compressed sparse column (without gaps).
+     <ul>
+     <li> <code>start[i]</code> stores the starting index of the ith column
+     <li> <code>index[k]</code> stores the row index of the kth nonzero element
+     <li> <code>value[k]</code> stores the coefficient of the kth nonzero element
+     </ul>
+    */
+    COINLIBAPI void COINLINKAGE
+    Cbc_loadProblem (Cbc_Model * model,  const int numcols, const int numrows,
+                     const CoinBigIndex * start, const int* index,
+                     const double* value,
+                     const double* collb, const double* colub,
+                     const double* obj,
+                     const double* rowlb, const double* rowub)
+    ;
+    /** Read an mps file from the given filename */
+    COINLIBAPI int COINLINKAGE
+    Cbc_readMps(Cbc_Model * model, const char *filename)
+    ;
+    /** Write an mps file from the given filename */
+    COINLIBAPI void COINLINKAGE
+    Cbc_writeMps(Cbc_Model * model, const char *filename)
+    ;
+    /** Provide an initial feasible solution to accelerate branch-and-bound 
+     Note that feasibility of the solution is *not* verified.
+    */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setInitialSolution(Cbc_Model *model, const double * sol)
+    ;
+    /** Fills in array with problem name  */
+    COINLIBAPI void COINLINKAGE
+    Cbc_problemName(Cbc_Model * model, int maxNumberCharacters, char * array)
+    ;
+    /** Sets problem name.
+    
+      \p array must be a null-terminated string.
+    */
+    COINLIBAPI int COINLINKAGE
+    Cbc_setProblemName(Cbc_Model * model, const char * array)
+    ;
 
-#### Displaying the model
+    /** Number of nonzero elements in constraint matrix */
+    COINLIBAPI int COINLINKAGE
+    Cbc_getNumElements(Cbc_Model * model)
+    ;
+    /** "Column start" vector of constraint matrix. Same format as Cbc_loadProblem() */
+    COINLIBAPI const CoinBigIndex * COINLINKAGE
+    Cbc_getVectorStarts(Cbc_Model * model)
+    ;
+    /** "Row index" vector of constraint matrix */
+    COINLIBAPI const int * COINLINKAGE
+    Cbc_getIndices(Cbc_Model * model)
+    ;
+    /** Coefficient vector of constraint matrix */
+    COINLIBAPI const double * COINLINKAGE
+    Cbc_getElements(Cbc_Model * model)
+    ;
 
-the `Model` instances have a `to_s` method. You can then run
-```ruby
-puts model
-```
-The model will be printed in LP format.
+    /** Maximum lenght of a row or column name */
+    COINLIBAPI size_t COINLINKAGE
+    Cbc_maxNameLength(Cbc_Model * model)
+    ;
+    /** Fill in first maxLength bytes of name array with a row name */
+    COINLIBAPI void COINLINKAGE
+    Cbc_getRowName(Cbc_Model * model, int iRow, char * name, size_t maxLength)
+    ;
+    /** Fill in first maxLength bytes of name array with a column name */
+    COINLIBAPI void COINLINKAGE
+    Cbc_getColName(Cbc_Model * model, int iColumn, char * name, size_t maxLength)
+    ;
+    /** Set the name of a column */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setColName(Cbc_Model * model, int iColumn, const char * name)
+    ;
+    /** Set the name of a row */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setRowName(Cbc_Model * model, int iRow, const char * name)
+    ;
+    /** Number of constraints in the model */
+    COINLIBAPI int COINLINKAGE
+    Cbc_getNumRows(Cbc_Model * model)
+    ;
+    /** Number of variables in the model */
+    COINLIBAPI int COINLINKAGE
+    Cbc_getNumCols(Cbc_Model * model)
+    ;
+    /** Direction of optimization (1 - minimize, -1 - maximize, 0 - ignore) */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setObjSense(Cbc_Model * model, double sense)
+    ;
+    /** Direction of optimization (1 - minimize, -1 - maximize, 0 - ignore) */
+    COINLIBAPI double COINLINKAGE
+    Cbc_getObjSense(Cbc_Model * model)
+    ;
+    /** Constraint lower bounds */
+    COINLIBAPI const double* COINLINKAGE
+    Cbc_getRowLower(Cbc_Model * model)
+    ;
+    /** Set the lower bound of a single constraint */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setRowLower(Cbc_Model * model, int index, double value)
+    ;
+    /** Constraint upper bounds */
+    COINLIBAPI const double* COINLINKAGE
+    Cbc_getRowUpper(Cbc_Model * model)
+    ;
+    /** Set the upper bound of a single constraint */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setRowUpper(Cbc_Model * model, int index, double value)
+    ;
+    /** Objective vector */
+    COINLIBAPI const double * COINLINKAGE
+    Cbc_getObjCoefficients(Cbc_Model * model)
+    ;
+    /** Set the objective coefficient of a single variable */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setObjCoeff(Cbc_Model * model, int index, double value)
+    ;
+    /** Variable lower bounds */
+    COINLIBAPI const double * COINLINKAGE
+    Cbc_getColLower(Cbc_Model * model)
+    ;
+    /** Set the lower bound of a single variable */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setColLower(Cbc_Model * model, int index, double value)
+    ;
+    /** Variable upper bounds */
+    COINLIBAPI const double * COINLINKAGE
+    Cbc_getColUpper(Cbc_Model * model)
+    ;
+    /** Set the upper bound of a single variable */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setColUpper(Cbc_Model * model, int index, double value)
+    ;
+    /** Determine whether the ith variable is integer restricted */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isInteger(Cbc_Model * model, int i)
+    ;
+    /** Set this variable to be continuous */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setContinuous(Cbc_Model * model, int iColumn)
+    ;
+    /** Set this variable to be integer */
+    COINLIBAPI void COINLINKAGE
+    Cbc_setInteger(Cbc_Model * model, int iColumn)
+    ;
+    /** Add SOS constraints to the model using row-order matrix */
+    COINLIBAPI void  COINLINKAGE
+    Cbc_addSOS(Cbc_Model * model, int numRows, const int * rowStarts,
+               const int * colIndices, const double * weights, const int type)
+    ;
+    /** Print the model */
+    COINLIBAPI void COINLINKAGE
+    Cbc_printModel(Cbc_Model * model, const char * argPrefix)
+    ;
+    /** Return a copy of this model */
+    COINLIBAPI Cbc_Model * COINLINKAGE
+    Cbc_clone(Cbc_Model * model)
+    ;
+    /*@}*/
+    /**@name Solver parameters */
+    /*@{*/
+    /** Set parameter "name" to value "value". Note that this
+     * translates directly to using "-name value" as a 
+     * command-line argument to Cbc.*/
+    COINLIBAPI void COINLINKAGE
+    Cbc_setParameter(Cbc_Model * model, const char * name, const char * value)
+    ;
 
-For instance:
-```
-Maximize
-  + 10 x1 + 6 x2 + 4 x3
+    
+    /*@}*/
+    /**@name Message handling.  Call backs are handled by ONE function */
+    /*@{*/
+    /** Pass in Callback function.
+     Message numbers up to 1000000 are Clp, Coin ones have 1000000 added */
+    COINLIBAPI void COINLINKAGE
+    Cbc_registerCallBack(Cbc_Model * model,
+                         cbc_callback userCallBack)
+    ;
+    /** Unset Callback function */
+    COINLIBAPI void COINLINKAGE
+    Cbc_clearCallBack(Cbc_Model * model)
+    ;
 
-Subject To
-  + x1 + x2 + x3 <= 100
-  + 10 x1 + 4 x2 + 5 x3 <= 600
-  + 2 x1 + 2 x2 + 6 x3 <= 300
+    /*@}*/
 
-Bounds
-  0 <= x1 <= +inf
-  0 <= x2 <= +inf
-  0 <= x3 <= +inf
 
-Generals
-  x1
-  x2
-  x3
+    /**@name Solving the model */
+    /*@{*/
+    /* Solve the model with Cbc (using CbcMain1).
+    */
+    COINLIBAPI int COINLINKAGE
+    Cbc_solve(Cbc_Model * model)
+    ;
+    /*@}*/
 
-End
-```
 
-### Solving
+    /**@name Accessing the solution and solution status */
+    /*@{*/
 
-To solve the model, you need to first transform it to a problem.
-```ruby
-problem = model.to_problem
-```
+    /** Sum of primal infeasibilities */
+    COINLIBAPI double COINLINKAGE
+    Cbc_sumPrimalInfeasibilities(Cbc_Model * model)
+    ;
+    /** Number of primal infeasibilities */
+    COINLIBAPI int COINLINKAGE
+    Cbc_numberPrimalInfeasibilities(Cbc_Model * model)
+    ;
 
-You can define a time limit to the resolution
-```ruby
-problem.set_time_limit(nb_seconds)
-```
+    /** Just check solution (for external use) - sets sum of
+        infeasibilities etc */
+    COINLIBAPI void COINLINKAGE
+    Cbc_checkSolution(Cbc_Model * model)
+    ;
 
-You can solve the Linear Problem
-```ruby
-problem.solve
-```
-
-You can specify arguments that match the cbc command line
-```ruby
-problem.solve(sec: 60) # equivalent to $ cbc -sec 60
-problem.solve(log: 1)  # equivalent to $ cbc -log 1
-```
-For more examples of available options, if `coinor-cbc` is installed run
-
-    $ cbc
-
-then type `?`
-
-Once `problem.solve` has finished you can query the status:
-```ruby
-problem.proven_infeasible?  # will tell you if the problem has no solution
-problem.proven_optimal?     # will tell you if the problem is solved optimally
-problem.time_limit_reached? # Will tell you if the solve timed out
-```
-
-To have the different values, do
-```ruby
-problem.objective_value # Will tell you the value of the best objective
-problem.best_bound      # Will tell you the best known bound
-                        # if the bound equals the objective value, the problem is optimally solved
-problem.value_of(var)   # will tell you the computed value or a variable
+    /** Number of iterations */
+    COINLIBAPI int COINLINKAGE
+    Cbc_getIterationCount(Cbc_Model * model)
+    ;
+    /** Are there a numerical difficulties? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isAbandoned(Cbc_Model * model)
+    ;
+    /** Is optimality proven? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isProvenOptimal(Cbc_Model * model)
+    ;
+    /** Is infeasiblity proven (or none better than cutoff)? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isProvenInfeasible(Cbc_Model * model)
+    ;
+    /** Was continuous solution unbounded? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isContinuousUnbounded(Cbc_Model * model)
+    ;
+    /** Node limit reached? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isNodeLimitReached(Cbc_Model * model)
+    ;
+    /** Time limit reached? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isSecondsLimitReached(Cbc_Model * model)
+    ;
+    /** Solution limit reached? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isSolutionLimitReached(Cbc_Model * model)
+    ;
+    /** Are there numerical difficulties (for initialSolve) ? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isInitialSolveAbandoned(Cbc_Model * model)
+    ;
+    /** Is optimality proven (for initialSolve) ? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isInitialSolveProvenOptimal(Cbc_Model * model)
+    ;
+    /** Is primal infeasiblity proven (for initialSolve) ? */
+    COINLIBAPI int COINLINKAGE
+    Cbc_isInitialSolveProvenPrimalInfeasible(Cbc_Model * model)
+    ;
+    /** "row" solution
+     *  This is the vector A*x, where A is the constraint matrix
+     *  and x is the current solution. */
+    COINLIBAPI const double * COINLINKAGE
+    Cbc_getRowActivity(Cbc_Model * model)
+    ;
+    /** Best feasible solution vector */
+    COINLIBAPI const double * COINLINKAGE
+    Cbc_getColSolution(Cbc_Model * model)
+    ;
+    /** Objective value of best feasible solution */
+    COINLIBAPI double COINLINKAGE
+    Cbc_getObjValue(Cbc_Model * model)
+    ;
+    /** Best known bound on the optimal objective value */
+    COINLIBAPI double COINLINKAGE
+    Cbc_getBestPossibleObjValue(Cbc_Model * model)
+    ;
+    /** Number of nodes explored in B&B tree */
+    COINLIBAPI int COINLINKAGE
+    Cbc_getNodeCount(Cbc_Model * model)
+    ;
+    /** Print the solution */
+    COINLIBAPI void  COINLINKAGE
+    Cbc_printSolution(Cbc_Model * model)
+    ;
+    /** Final status of problem
+        Some of these can be found out by is...... functions
+        -1 before branchAndBound
+        0 finished - check isProvenOptimal or isProvenInfeasible to see if solution found
+        (or check value of best solution)
+        1 stopped - on maxnodes, maxsols, maxtime
+        2 difficulties so run was abandoned
+        (5 event user programmed event occurred)
+    */
+    COINLIBAPI int COINLINKAGE
+    Cbc_status(Cbc_Model * model)
+    ;
+    /** Secondary status of problem
+        -1 unset (status_ will also be -1)
+        0 search completed with solution
+        1 linear relaxation not feasible (or worse than cutoff)
+        2 stopped on gap
+        3 stopped on nodes
+        4 stopped on time
+        5 stopped on user event
+        6 stopped on solutions
+        7 linear relaxation unbounded
+        8 stopped on iteration limit
+    */
+    COINLIBAPI int COINLINKAGE
+    Cbc_secondaryStatus(Cbc_Model * model)
+    ;
 ```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/gverger/ruby-cbc.
+Bug reports and pull requests are welcome on GitHub at https://github.com/gverger/cbc-wrapper.
 
