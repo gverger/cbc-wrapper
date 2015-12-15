@@ -8,7 +8,7 @@ def install_cbc
   system "curl -o #{TARBALL_PATH} http://www.coin-or.org/download/source/Cbc/Cbc-2.9.7.tgz"
   Dir.chdir "/tmp" do
     system "rm -rf #{CBC_SRC_DIR}; tar -xzf #{TARBALL_PATH}"
-    res = system "cd #{CBC_SRC_DIR} && ./configure --prefix=#{CBC_INSTALL} -C --with-pic --without-static && make && make install"
+    res = system "cd #{CBC_SRC_DIR} && ./configure --prefix=#{CBC_INSTALL} -C --with-pic --without-static && make -j `bash -c \"grep -c ^processor /proc/cpuinfo\"` && make install"
     if not res
       puts "Failed to build CBC, aborting... Cbc source is in #{CBC_SRC_DIR}"
       exit 1
