@@ -1,3 +1,3 @@
 module CbcWrapper
-  VERSION = "2.9.7.2"
+  VERSION = "2.9.7.3"
 end
