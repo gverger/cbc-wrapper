@@ -10,15 +10,6 @@ ensure
   Dir.chdir(original_dir)
 end
 
-# RSpec::Core::RakeTask.new(:spec)
-#
-# spec = Gem::Specification.load('cbc-wrapper.gemspec')
-# Rake::ExtensionTask.new('cbc-wrapper', spec) do |ext|
-#   ext.lib_dir = 'lib/cbc-wrapper'
-#   ext.tmp_dir = "tmp"
-#   ext.name = 'cbc_wrapper'
-# end
-
 SHARED_LIBRARY_EXTENSION = RUBY_PLATFORM.include?("darwin") ? 'bundle' : 'so'
 EXTENSION = 'lib/cbc-wrapper/cbc_wrapper.'+SHARED_LIBRARY_EXTENSION
 
@@ -26,7 +17,6 @@ desc "Use extconf.rb and make to build the extension."
 task :build_extension => EXTENSION
 
 file EXTENSION => 'ext/cbc-wrapper/cbc_wrap.c' do
-  puts "start"
   in_dir('ext/cbc-wrapper') do
     system("ruby extconf.rb")
     system("make")

@@ -1,4 +1,4 @@
-require 'mkmf'
+require "mkmf"
 ROOT_DIR = File.dirname(File.absolute_path(__FILE__))
 
 TARBALL_PATH = "/tmp/Cbc.tgz"
@@ -9,7 +9,7 @@ def install_cbc
   Dir.chdir "/tmp" do
     system "rm -rf #{CBC_SRC_DIR}; tar -xzf #{TARBALL_PATH}"
     res = system "cd #{CBC_SRC_DIR} && ./configure --prefix=#{CBC_INSTALL} -C --with-pic --without-static && make -j `bash -c \"grep -c ^processor /proc/cpuinfo\"` && make install"
-    if not res
+    unless res
       puts "Failed to build CBC, aborting... Cbc source is in #{CBC_SRC_DIR}"
       exit 1
     end
@@ -38,14 +38,14 @@ libs = %w(
 )
 
 libs.each do |lib|
-  find_library(lib,nil, "#{CBC_INSTALL}/lib")
+  find_library(lib, nil, "#{CBC_INSTALL}/lib")
 end
 
-headers = Dir["#{CBC_INSTALL}/include/coin/*.h"].map{ |h| h.split('/').last }
+headers = Dir["#{CBC_INSTALL}/include/coin/*.h"].map { |h| h.split("/").last }
 headers.each do |header|
   find_header(header, "#{CBC_INSTALL}/include/coin")
 end
 
 dir_config("cbc-wrapper")
 RPATHFLAG << " -Wl,-rpath,'$$ORIGIN/install/lib'"
-create_makefile('cbc_wrapper')
+create_makefile("cbc_wrapper")
