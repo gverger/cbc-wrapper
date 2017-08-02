@@ -1,7 +1,7 @@
 # Cbc-Wrapper
 
 This gem wraps the Coin-Or Cbc Mixed Integer Linear Programming Library.
-It uses the version 2.9.7 of Cbc.
+It uses the version 2.9.9 of Cbc.
 
 ## Installation
 
