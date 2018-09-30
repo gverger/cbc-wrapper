@@ -4,7 +4,7 @@ module Cbc_wrapper
   extend FFI::Library
 
   ffi_lib_flags :now, :global
-  ffi_lib ["ext/cbc-wrapper/install/lib/#{FFI::Platform::LIBPREFIX}CbcSolver.#{FFI::Platform::LIBSUFFIX}", 'CbcSolver']
+  ffi_lib ["../../ext/cbc-wrapper/install/lib/#{FFI.map_library_name('CbcSolver')}", 'CbcSolver']
 
   typedef :pointer, :model
   typedef :pointer, :int_array
