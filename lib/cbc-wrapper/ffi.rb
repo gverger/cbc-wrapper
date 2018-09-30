@@ -3,7 +3,7 @@ require 'ffi'
 module Cbc_wrapper
   extend FFI::Library
 
-  ffi_lib_flags :lazy, :global
+  ffi_lib_flags :now, :global
   ffi_lib ["ext/cbc-wrapper/install/lib/#{FFI::Platform::LIBPREFIX}CbcSolver.#{FFI::Platform::LIBSUFFIX}", 'CbcSolver']
 
   typedef :pointer, :model

@@ -16,4 +16,11 @@ def install_cbc
   end
 end
 
-install_cbc
+BUILD = 'ext/cbc-wrapper/install/include/Cbc_C_interface.h'
+
+file BUILD do
+  require 'mkmf'
+  install_cbc unless have_library('CbcSolver')
+end
+
+task :default => [BUILD]
