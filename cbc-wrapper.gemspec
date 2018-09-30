@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib", "ext"]
-  spec.extensions    << "ext/cbc-wrapper/extconf.rb"
+  # spec.extensions    << "ext/cbc-wrapper/extconf.rb"
 
   spec.add_dependency 'ffi'
 
