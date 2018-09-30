@@ -11,16 +11,7 @@ dir_config('cbc')
 succeed = true
 
 libs = %w[
-  Cbc
   CbcSolver
-  Cgl
-  Clp
-  ClpSolver
-  CoinUtils
-  Osi
-  OsiCbc
-  OsiClp
-  OsiCommonTests
 ]
 
 libs.each do |lib|
