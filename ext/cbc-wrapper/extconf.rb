@@ -1,10 +1,14 @@
 require 'mkmf'
-ROOT_DIR = File.dirname(File.absolute_path(__FILE__))
 
 ## Rerun this if updated cbc version
 #  swig_cmd = find_executable "swig"
 #  current_path = File.expand_path('../', __FILE__)
-#  %x{#{swig_cmd} -ruby -I#{current_path}/install/include/coin #{current_path}/cbc.i }
+#  %x{#{swig_cmd} -ruby -I#{current_path}/coin #{current_path}/cbc.i }
+
+dir_config('cbc-wrapper')
+dir_config('cbc')
+
+succeed = true
 
 libs = %w[
   Cbc
@@ -20,14 +24,21 @@ libs = %w[
 ]
 
 libs.each do |lib|
-  find_library(lib, nil)
+  unless find_library(lib, nil)
+    succeed = false
+  end
 end
 
-headers = Dir['coin/*.h'].map { |h| h.split('/').last }
+headers = ["coin/Cbc_C_Interface.h", "coin/Coin_C_defines.h"]
+
 headers.each do |header|
-  puts find_header(header, 'coin/')
+  unless find_header(header)
+    succeed = false
+  end
 end
 
-dir_config('cbc-wrapper')
-RPATHFLAG << " -Wl,-rpath,'$$ORIGIN/install/lib'"
-create_makefile('cbc_wrapper')
+if succeed
+  create_makefile('cbc_wrapper')
+else
+  abort "Missing some libraries or headers"
+end
