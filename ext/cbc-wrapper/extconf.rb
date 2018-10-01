@@ -25,16 +25,7 @@ install_cbc
 #  %x{#{swig_cmd} -ruby -I#{current_path}/install/include/coin #{current_path}/cbc.i }
 
 libs = %w(
-  Cbc
   CbcSolver
-  Cgl
-  Clp
-  ClpSolver
-  CoinUtils
-  Osi
-  OsiCbc
-  OsiClp
-  OsiCommonTests
 )
 
 libs.each do |lib|
