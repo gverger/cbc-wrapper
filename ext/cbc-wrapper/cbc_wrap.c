@@ -1851,8 +1851,8 @@ struct timeval rb_time_timeval(VALUE);
 #endif
 
 
-#include "Coin_C_defines.h"
-#include "Cbc_C_Interface.h"
+#include "coin/Coin_C_defines.h"
+#include "coin/Cbc_C_Interface.h"
 
 
 typedef int IntArray;

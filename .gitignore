@@ -7,3 +7,7 @@
 /pkg/
 /spec/reports/
 /tmp/
+/ext/cbc-wrapper/Makefile
+/ext/cbc-wrapper/mkmf.log
+ext/cbc-wrapper/*.o
+ext/cbc-wrapper/*.so
