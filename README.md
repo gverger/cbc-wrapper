@@ -5,6 +5,8 @@ It uses the version 2.9.9 of Cbc.
 
 ## Installation
 
+This gem requires you to have Cbc installed on your system first.
+
 Add this line to your application's Gemfile:
 
 ```ruby
@@ -19,10 +21,8 @@ Or install it yourself as:
 
     $ gem install cbc-wrapper
 
-The gem includes a version of the Coin-Or Cbc library. It downloads the library sources and
-recompiles them at installation. (curl, make and some gcc tools are needed)
-
-It also works on Heroku.
+WARNING: if you want the gem to download and compile the library sources when installing the gem,
+you will need to use a lesser version of it (2.9.9.3).
 
 ## Usage
 
