@@ -7,6 +7,10 @@ It uses the version 2.9.9 of Cbc.
 
 This gem requires you to have Cbc installed on your system first.
 
+- On a mac, you can execute `brew install cbc`
+- On Debian and Ubuntu, use `apt-get install coinor-libcbc-dev`
+- On Archlinux, use `pacman -S coin-or-cbc`
+
 Add this line to your application's Gemfile:
 
 ```ruby
@@ -24,10 +28,26 @@ Or install it yourself as:
 WARNING: if you want the gem to download and compile the library sources when installing the gem,
 you will need to use a lesser version of it (2.9.9.3).
 
+### Heroku
+
+On Heroku, you will need to tweak your installation a bit: you can install the cbc library with
+the [Apt](https://github.com/heroku/heroku-buildpack-apt) buildpack with an Aptfile of:
+
+```
+coinor-libcbc-dev
+```
+
+You will need to set LD_LIBRARY_PATH so it can find LAPACK and BLAS (see this [issue](https://github.com/heroku/heroku-buildpack-apt/issues/35)).
+
+```
+heroku config:set LD_LIBRARY_PATH=/app/.apt/usr/lib/x86_64-linux-gnu/lapack:/app/.apt/usr/lib/x86_64-linux-gnu/blas
+```
+
 ## Usage
 
 All functions defined in Cbc_C_interface.h are wrapped. You can use any function named
-`func_name` with 
+`func_name` with
+
 ```ruby
 Cbc_wrapper.func_name
 ```
@@ -100,7 +120,7 @@ Below is the Cbc_C_interface.h file:
     COINLIBAPI void COINLINKAGE
     Cbc_writeMps(Cbc_Model * model, const char *filename)
     ;
-    /** Provide an initial feasible solution to accelerate branch-and-bound 
+    /** Provide an initial feasible solution to accelerate branch-and-bound
      Note that feasibility of the solution is *not* verified.
     */
     COINLIBAPI void COINLINKAGE
@@ -111,7 +131,7 @@ Below is the Cbc_C_interface.h file:
     Cbc_problemName(Cbc_Model * model, int maxNumberCharacters, char * array)
     ;
     /** Sets problem name.
-    
+
       \p array must be a null-terminated string.
     */
     COINLIBAPI int COINLINKAGE
@@ -240,13 +260,13 @@ Below is the Cbc_C_interface.h file:
     /**@name Solver parameters */
     /*@{*/
     /** Set parameter "name" to value "value". Note that this
-     * translates directly to using "-name value" as a 
+     * translates directly to using "-name value" as a
      * command-line argument to Cbc.*/
     COINLIBAPI void COINLINKAGE
     Cbc_setParameter(Cbc_Model * model, const char * name, const char * value)
     ;
 
-    
+
     /*@}*/
     /**@name Message handling.  Call backs are handled by ONE function */
     /*@{*/
@@ -394,4 +414,3 @@ Below is the Cbc_C_interface.h file:
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/gverger/cbc-wrapper.
-
